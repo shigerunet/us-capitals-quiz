@@ -267,8 +267,8 @@ const state = {
   sel:null, done:false, typed:"", spOk:null, hov:null,
 };
 
-let _anim=false;
-function render(anim){ _anim=!!anim; document.getElementById("app").innerHTML = views[state.scr](); attachEvents(); }
+let _anim=false, _hoverOk=false;
+function render(anim){ _anim=!!anim; _hoverOk=false; document.getElementById("app").innerHTML = views[state.scr](); attachEvents(); setTimeout(()=>{_hoverOk=true;},60); }
 
 /* ─── LOAD MAP ─── */
 fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
@@ -417,7 +417,7 @@ function attachEvents(){
   // Map state hover/click
   document.querySelectorAll('[data-state]').forEach(el=>{
     el.addEventListener('mouseenter',()=>{
-      if(!state.mapDn){ el.setAttribute('fill','var(--map-hover)'); el.setAttribute('stroke','#2563eb'); el.setAttribute('stroke-width','1.8'); }
+      if(!state.mapDn&&_hoverOk){ el.setAttribute('fill','var(--map-hover)'); el.setAttribute('stroke','#2563eb'); el.setAttribute('stroke-width','1.8'); }
     });
     el.addEventListener('mouseleave',()=>{
       if(!state.mapDn){ el.setAttribute('fill','var(--map-fill)'); el.setAttribute('stroke','#94a3b8'); el.setAttribute('stroke-width','0.6'); }
