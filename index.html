@@ -267,7 +267,8 @@ const state = {
   sel:null, done:false, typed:"", spOk:null, hov:null,
 };
 
-function render(){ document.getElementById("app").innerHTML = views[state.scr](); attachEvents(); }
+let _anim=false;
+function render(anim){ _anim=!!anim; document.getElementById("app").innerHTML = views[state.scr](); attachEvents(); }
 
 /* ─── LOAD MAP ─── */
 fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
@@ -277,7 +278,7 @@ fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
     mapFeatures = geojson.features
       .filter(f=> FIPS[String(f.id).padStart(2,"0")])
       .map(f=>({...f, name: FIPS[String(f.id).padStart(2,"0")]}));
-    render();
+    render(true);
   })
   .catch(()=>{ document.getElementById("app").innerHTML='<div class="loading" style="color:#ef4444">Could not load map data.<br>Please check your internet connection and refresh.</div>'; });
 
@@ -290,7 +291,7 @@ const views = {
     const isAll = state.selW.size===WEEKS.length;
     const pool = WEEKS.flatMap(w=>state.selW.has(w.week)?w.states:[]);
     return `
-    <div class="card menu-card fade-in">
+    <div class="card menu-card${_anim?' fade-in':''}">
       <div class="flag-stripe"><div></div><div></div><div></div><div></div><div></div></div>
       <div class="menu-body">
         <div class="stars">★ ★ ★</div>
@@ -339,7 +340,7 @@ const views = {
           else if(f.name===state.mapSel){fill='#ef4444';stroke='#991b1b';sw=2.5;}
           else{fill='#dce4ef';}
           cursor='default';
-        } else if(f.name===state.hov){fill='var(--map-hover)';stroke='#2563eb';sw=1.8;}
+        }
         return `<path d="${pathGen(f)}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round" style="cursor:${cursor}" data-state="${f.name}"/>`;
       }).join('');
       let hereMark='';
@@ -367,7 +368,7 @@ const views = {
     }
 
     return `
-    <div class="card quiz-card fade-in">
+    <div class="card quiz-card${_anim?' fade-in':''}">
       <div class="quiz-header">
         <button class="back-btn" data-act="backMenu">✕</button>
         <div class="header-center"><span class="q-num">${state.ci+1}/${state.qs.length}</span>${state.streak>=3?`<span class="streak-badge">🔥${state.streak}</span>`:''}</div>
@@ -390,7 +391,7 @@ const views = {
     const wrong=state.res.filter(r=>!r.correct);
     const mW=wrong.filter(r=>r.type==='map'),cW=wrong.filter(r=>r.type==='capital');
     return `
-    <div class="card result-card fade-in">
+    <div class="card result-card${_anim?' fade-in':''}">
       <h1 class="result-grade">${g}</h1>
       <div class="result-score"><span class="result-big">${state.score}</span><span class="result-of">/${tot}</span></div>
       <div class="result-pct">${p}%</div>
@@ -415,8 +416,12 @@ function attachEvents(){
   });
   // Map state hover/click
   document.querySelectorAll('[data-state]').forEach(el=>{
-    el.addEventListener('mouseenter',()=>{ if(!state.mapDn){state.hov=el.dataset.state;render();} });
-    el.addEventListener('mouseleave',()=>{ if(!state.mapDn){state.hov=null;render();} });
+    el.addEventListener('mouseenter',()=>{
+      if(!state.mapDn){ el.setAttribute('fill','var(--map-hover)'); el.setAttribute('stroke','#2563eb'); el.setAttribute('stroke-width','1.8'); }
+    });
+    el.addEventListener('mouseleave',()=>{
+      if(!state.mapDn){ el.setAttribute('fill','var(--map-fill)'); el.setAttribute('stroke','#94a3b8'); el.setAttribute('stroke-width','0.6'); }
+    });
     el.addEventListener('click',()=>{ if(!state.mapDn) actions.mapClick(el.dataset.state); });
   });
   // Spell input
@@ -458,9 +463,9 @@ const actions = {
     state.qs=shuffle(pool).map(([s,c])=>({state:s,capital:c,choices:state.capMode==='choice'?genCh(c,all):[]}));
     state.ci=0;state.score=0;state.mSc=0;state.cSc=0;state.res=[];state.streak=0;state.best=0;
     state.sel=null;state.done=false;state.typed='';state.spOk=null;state.mapSel=null;state.mapDn=false;state.hov=null;
-    state.phase=state.mapOn?'map':'capital';state.scr='quiz';render();
+    state.phase=state.mapOn?'map':'capital';state.scr='quiz';render(true);
   },
-  backMenu(){ state.scr='menu';render(); },
+  backMenu(){ state.scr='menu';render(true); },
   mapClick(name){
     if(state.mapDn) return;
     state.mapSel=name;state.mapDn=true;state.hov=null;
@@ -469,6 +474,7 @@ const actions = {
     addStreak(ok);
     state.res.push({state:state.qs[state.ci].state,type:'map',answer:name,correct:ok});
     render();
+    const fb=document.querySelector('.feedback-row'); if(fb) fb.scrollIntoView({behavior:'smooth',block:'nearest'});
   },
   toCap(){ state.phase='capital';state.mapSel=null;state.mapDn=false;state.hov=null;render(); },
   selChoice(ch){
@@ -491,10 +497,10 @@ const actions = {
     render();
   },
   next(){
-    if(state.ci+1>=state.qs.length){state.scr='done';render();return;}
+    if(state.ci+1>=state.qs.length){state.scr='done';render(true);return;}
     state.ci++;state.sel=null;state.done=false;state.typed='';state.spOk=null;
     state.mapSel=null;state.mapDn=false;state.hov=null;
-    state.phase=state.mapOn?'map':'capital';render();
+    state.phase=state.mapOn?'map':'capital';render(true);
   },
 };
 </script>
