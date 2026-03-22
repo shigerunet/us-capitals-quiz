@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>U.S. Capitals Quiz</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
+  :root {
+    --navy: #0a2463;
+    --navy2: #1e3a6e;
+    --red: #bf0a30;
+    --green: #16a34a;
+    --green-bg: #f0fdf4;
+    --red-err: #dc2626;
+    --red-bg: #fef2f2;
+    --pill-bg: #e8efff;
+    --bg-light: #f8fafc;
+    --border: #d0d8e8;
+    --text: #1e293b;
+    --text2: #475569;
+    --text3: #64748b;
+    --text4: #94a3b8;
+    --map-bg: #f0f4fb;
+    --map-fill: #d4dfee;
+    --map-hover: #93b5e0;
+    --serif: 'Playfair Display', Georgia, serif;
+    --sans: 'DM Sans', system-ui, sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    min-height:100vh;
+    background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 40%,#274478 100%);
+    display:flex; align-items:center; justify-content:center;
+    padding:12px; font-family:var(--serif);
+  }
+  .card {
+    background:#fff; border-radius:20px; overflow:hidden;
+    width:100%; box-shadow:0 20px 60px rgba(0,0,0,.3);
+  }
+  .menu-card { max-width:540px; }
+  .quiz-card { max-width:640px; }
+  .result-card { max-width:480px; padding:28px 22px 22px; text-align:center; }
+  .flag-stripe div:nth-child(odd) { height:5px; background:var(--red); }
+  .flag-stripe div:nth-child(even) { height:3px; background:#fff; }
+  .menu-body { padding:24px 22px 22px; text-align:center; }
+  .stars { font-size:16px; color:var(--red); letter-spacing:8px; margin-bottom:6px; }
+  h1.title { font-size:26px; font-weight:800; color:var(--navy); margin-bottom:2px; font-family:var(--serif); }
+  .subtitle { font-size:13px; color:var(--text3); margin-bottom:18px; font-style:italic; font-family:var(--sans); }
+
+/* Options rows */
+.opt-row {
+display:flex; align-items:center; justify-content:space-between;
+padding:9px 14px; margin-bottom:7px; background:var(–bg-light); border-radius:10px;
+}
+.opt-label { font-size:13px; font-weight:600; color:#334155; font-family:var(–sans); }
+.toggle { width:44px; height:23px; border-radius:12px; border:none; cursor:pointer; position:relative; padding:0; transition:background .2s; }
+.toggle.on { background:var(–navy); }
+.toggle.off { background:#cbd5e1; }
+.toggle-knob {
+width:17px; height:17px; border-radius:9px; background:#fff;
+position:absolute; top:3px; transition:left .2s;
+}
+.toggle.on .toggle-knob { left:24px; }
+.toggle.off .toggle-knob { left:3px; }
+
+/* Mode toggle */
+.mode-toggle { display:flex; border-radius:8px; overflow:hidden; border:2px solid var(–navy); }
+.mode-btn { padding:5px 15px; border:none; font-size:11px; font-weight:700; cursor:pointer; font-family:var(–sans); }
+.mode-btn.active { background:var(–navy); color:#fff; }
+.mode-btn.inactive { background:#fff; color:var(–navy); }
+
+/* Range & week buttons */
+.range-row { display:flex; align-items:center; justify-content:center; gap:5px; margin-bottom:10px; flex-wrap:wrap; }
+.range-btn {
+padding:4px 11px; border-radius:7px; border:1px solid var(–border); background:var(–bg-light);
+font-size:11px; color:var(–text2); cursor:pointer; font-family:var(–sans); font-weight:600;
+transition:all .15s;
+}
+.range-btn:hover { background:var(–pill-bg); border-color:var(–navy); }
+.week-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:5px; margin-bottom:10px; }
+.week-btn {
+padding:8px 2px; border-radius:8px; cursor:pointer; text-align:center;
+display:flex; flex-direction:column; align-items:center; gap:1px; transition:all .15s;
+}
+.week-btn.off { border:2px solid #e2e8f0; background:#fff; }
+.week-btn.on { border:2px solid var(–navy); background:var(–pill-bg); }
+.week-btn .wn { font-size:11px; font-weight:700; color:var(–navy); font-family:var(–sans); }
+.week-btn .wc { font-size:9px; color:var(–text4); font-family:var(–sans); }
+.sel-info { font-size:12px; color:var(–text3); margin-bottom:10px; font-family:var(–sans); }
+.start-btn {
+padding:12px 44px; border:none; border-radius:13px; font-size:17px; font-weight:700;
+cursor:pointer; font-family:var(–serif); margin-bottom:8px; transition:all .2s;
+}
+.start-btn.active { background:var(–navy); color:#fff; box-shadow:0 4px 16px rgba(10,36,99,.3); }
+.start-btn.active:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(10,36,99,.35); }
+.start-btn.disabled { background:#cbd5e1; color:var(–text4); cursor:not-allowed; }
+.hint { font-size:11px; color:var(–text4); font-family:var(–sans); }
+
+/* Quiz header */
+.quiz-header { display:flex; align-items:center; justify-content:space-between; padding:10px 14px 6px; }
+.back-btn { background:none; border:none; font-size:18px; color:var(–text4); cursor:pointer; padding:4px; }
+.header-center { display:flex; align-items:center; gap:8px; }
+.q-num { font-size:13px; font-weight:600; color:var(–text2); font-family:var(–sans); }
+.streak-badge {
+font-size:12px; background:#fef3c7; color:#b45309; padding:2px 7px;
+border-radius:99px; font-family:var(–sans); font-weight:600;
+}
+.score-pill {
+font-size:13px; font-weight:700; color:var(–navy); background:var(–pill-bg);
+padding:3px 10px; border-radius:99px; font-family:var(–sans);
+}
+.progress-track { height:3px; background:#e2e8f0; margin:0 14px; border-radius:2px; }
+.progress-fill { height:100%; background:linear-gradient(90deg,var(–navy),#2563eb); border-radius:2px; transition:width .4s ease; }
+
+/* Phase indicator */
+.phase-row { display:flex; align-items:center; justify-content:center; gap:8px; padding:8px 0 0; }
+.phase-tag { font-size:11px; font-weight:700; padding:3px 12px; border-radius:99px; font-family:var(–sans); }
+.phase-tag.active { color:var(–navy); background:var(–pill-bg); }
+.phase-tag.done { color:var(–green); background:var(–green-bg); }
+.phase-tag.next { color:var(–text4); font-weight:600; }
+.phase-div { font-size:11px; color:#cbd5e1; }
+
+/* Question area */
+.q-area { text-align:center; padding:14px 16px 8px; }
+.q-label { font-size:14px; color:var(–text3); margin-bottom:4px; font-style:italic; font-family:var(–sans); }
+.state-name { font-size:30px; font-weight:800; color:var(–navy); font-family:var(–serif); }
+
+/* Map */
+.map-wrap { padding:0 6px 6px; user-select:none; }
+.map-wrap svg { width:100%; height:auto; max-height:380px; display:block; background:var(–map-bg); border-radius:8px; }
+.map-wrap path { transition:fill .1s; }
+
+/* Choices */
+.choices-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; padding:0 14px 12px; }
+.choice-btn {
+padding:13px 8px; border:2px solid var(–border); border-radius:11px; background:#fff;
+cursor:pointer; transition:all .12s; display:flex; align-items:center; gap:8px; text-align:left;
+}
+.choice-btn:hover { border-color:var(–navy); background:#f0f4ff; }
+.choice-btn.correct { border-color:var(–green); background:var(–green-bg); }
+.choice-btn.wrong { border-color:var(–red-err); background:var(–red-bg); }
+.choice-btn.dim { opacity:.4; }
+.choice-key {
+width:22px; height:22px; border-radius:6px; background:#f1f5f9;
+display:flex; align-items:center; justify-content:center;
+font-size:11px; font-weight:700; color:var(–text3); flex-shrink:0; font-family:var(–sans);
+}
+.choice-text { font-size:14px; font-weight:600; color:var(–text); font-family:var(–serif); }
+
+/* Spell input */
+.spell-area { padding:0 14px 12px; }
+.input-row { display:flex; gap:8px; }
+.spell-input {
+flex:1; padding:11px 12px; border:2px solid var(–border); border-radius:11px;
+font-size:17px; font-family:var(–serif); outline:none; transition:all .2s; color:var(–text);
+}
+.spell-input:focus { border-color:var(–navy); }
+.spell-input.ok { border-color:var(–green); background:var(–green-bg); }
+.spell-input.err { border-color:var(–red-err); background:var(–red-bg); }
+.check-btn {
+padding:11px 18px; background:var(–navy); color:#fff; border:none; border-radius:11px;
+font-size:13px; font-weight:700; cursor:pointer; font-family:var(–serif); white-space:nowrap;
+}
+.correct-answer {
+margin-top:7px; font-size:14px; color:#b91c1c; font-weight:600;
+padding:7px 10px; background:var(–red-bg); border-radius:8px; text-align:center; font-family:var(–sans);
+}
+
+/* Feedback row */
+.feedback-row { display:flex; align-items:center; justify-content:space-between; padding:8px 14px 14px; }
+.feedback-msg { font-size:14px; font-weight:700; font-family:var(–sans); }
+.next-btn {
+padding:8px 20px; background:var(–navy); color:#fff; border:none; border-radius:10px;
+font-size:13px; font-weight:600; cursor:pointer; font-family:var(–serif); transition:all .15s;
+}
+.next-btn:hover { transform:translateY(-1px); }
+
+/* Results */
+.result-grade { font-size:26px; margin-bottom:12px; color:var(–navy); font-family:var(–serif); }
+.result-score { display:flex; align-items:baseline; justify-content:center; gap:2px; }
+.result-big { font-size:56px; font-weight:800; color:var(–navy); line-height:1; font-family:var(–serif); }
+.result-of { font-size:20px; color:var(–text4); font-family:var(–sans); }
+.result-pct { font-size:16px; color:var(–text3); margin-top:2px; margin-bottom:18px; font-family:var(–sans); }
+.stat-row { display:flex; justify-content:center; gap:24px; margin-bottom:18px; flex-wrap:wrap; }
+.stat-item { text-align:center; }
+.stat-val { font-size:22px; font-weight:700; color:var(–navy); font-family:var(–serif); }
+.stat-label { font-size:10px; color:var(–text4); font-family:var(–sans); text-transform:uppercase; letter-spacing:1px; }
+
+/* Review */
+.review-section { text-align:left; margin-bottom:14px; }
+.review-title { font-size:12px; font-weight:700; color:var(–text3); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; font-family:var(–sans); }
+.review-list { display:flex; flex-direction:column; gap:4px; max-height:160px; overflow-y:auto; }
+.review-item { display:flex; align-items:center; gap:6px; padding:5px 8px; background:var(–red-bg); border-radius:7px; font-size:12px; font-family:var(–sans); }
+.review-state { font-weight:700; color:var(–text); min-width:95px; }
+.review-wrong { color:var(–red-err); text-decoration:line-through; font-size:11px; }
+.review-arrow { color:var(–text4); font-size:10px; }
+.review-correct { color:var(–green); font-weight:600; }
+.result-actions { display:flex; gap:8px; justify-content:center; }
+.retry-btn, .menu-btn2 {
+padding:10px 24px; border:none; border-radius:11px; font-size:14px; font-weight:600;
+cursor:pointer; font-family:var(–serif); transition:all .15s;
+}
+.retry-btn { background:var(–navy); color:#fff; }
+.retry-btn:hover, .menu-btn2:hover { transform:translateY(-2px); }
+.menu-btn2 { background:#f1f5f9; color:var(–text2); }
+
+/* Loading */
+.loading { text-align:center; padding:40px; color:var(–text3); font-family:var(–sans); font-size:14px; }
+.loading .spinner {
+width:32px; height:32px; border:3px solid #e2e8f0; border-top-color:var(–navy);
+border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 12px;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* Animations */
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+.fade-in { animation:fadeIn .3s ease; }
+</style>
+
+</head>
+<body>
+
+<div id="app"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+
+<script>
+"use strict";
+
+/* ─── DATA ─── */
+const WEEKS = [
+  {week:1,states:[["California","Sacramento"],["Kansas","Topeka"],["Mississippi","Jackson"]]},
+  {week:2,states:[["Texas","Austin"],["Florida","Tallahassee"],["Idaho","Boise"]]},
+  {week:3,states:[["South Carolina","Columbia"],["Alaska","Juneau"],["Oregon","Salem"]]},
+  {week:4,states:[["Hawaii","Honolulu"],["New York","Albany"],["Maine","Augusta"]]},
+  {week:5,states:[["Nebraska","Lincoln"],["Oklahoma","Oklahoma City"],["Georgia","Atlanta"],["Minnesota","St. Paul"]]},
+  {week:6,states:[["Alabama","Montgomery"],["Colorado","Denver"],["Louisiana","Baton Rouge"],["West Virginia","Charleston"]]},
+  {week:7,states:[["Arizona","Phoenix"],["Connecticut","Hartford"],["Maryland","Annapolis"]]},
+  {week:8,states:[["Arkansas","Little Rock"],["Delaware","Dover"],["Kentucky","Frankfort"]]},
+  {week:9,states:[["Illinois","Springfield"],["Iowa","Des Moines"],["Massachusetts","Boston"]]},
+  {week:10,states:[["Indiana","Indianapolis"],["Michigan","Lansing"],["Missouri","Jefferson City"],["Ohio","Columbus"]]},
+  {week:11,states:[["Nevada","Carson City"],["New Jersey","Trenton"],["Rhode Island","Providence"]]},
+  {week:12,states:[["New Hampshire","Concord"],["Wisconsin","Madison"],["Tennessee","Nashville"]]},
+  {week:13,states:[["New Mexico","Santa Fe"],["South Dakota","Pierre"],["Utah","Salt Lake City"]]},
+  {week:14,states:[["North Carolina","Raleigh"],["Vermont","Montpelier"],["Wyoming","Cheyenne"]]},
+  {week:15,states:[["North Dakota","Bismarck"],["Pennsylvania","Harrisburg"],["Virginia","Richmond"],["Washington","Olympia"]]},
+];
+const FIPS={"01":"Alabama","02":"Alaska","04":"Arizona","05":"Arkansas","06":"California","08":"Colorado","09":"Connecticut","10":"Delaware","12":"Florida","13":"Georgia","15":"Hawaii","16":"Idaho","17":"Illinois","18":"Indiana","19":"Iowa","20":"Kansas","21":"Kentucky","22":"Louisiana","23":"Maine","24":"Maryland","25":"Massachusetts","26":"Michigan","27":"Minnesota","28":"Mississippi","29":"Missouri","30":"Montana","31":"Nebraska","32":"Nevada","33":"New Hampshire","34":"New Jersey","35":"New Mexico","36":"New York","37":"North Carolina","38":"North Dakota","39":"Ohio","40":"Oklahoma","41":"Oregon","42":"Pennsylvania","44":"Rhode Island","45":"South Carolina","46":"South Dakota","47":"Tennessee","48":"Texas","49":"Utah","50":"Vermont","51":"Virginia","53":"Washington","54":"West Virginia","55":"Wisconsin","56":"Wyoming"};
+
+let mapFeatures = null;
+const projection = d3.geoAlbersUsa().scale(1280).translate([480,300]);
+const pathGen = d3.geoPath().projection(projection);
+
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=0|Math.random()*(i+1);[b[i],b[j]]=[b[j],b[i]];}return b;}
+function genCh(c,all){const o=all.map(d=>d[1]).filter(x=>x!==c);return shuffle([c,...shuffle(o).slice(0,3)]);}
+function norm(s){return s.trim().toLowerCase().replace(/\s+/g," ").replace(/\./g,"");}
+
+/* ─── STATE ─── */
+const state = {
+  scr:"menu", capMode:"spell", mapOn:true, selW:new Set(),
+  qs:[], ci:0, score:0, mSc:0, cSc:0, res:[], streak:0, best:0, anim:0,
+  phase:"map", mapSel:null, mapDn:false,
+  sel:null, done:false, typed:"", spOk:null, hov:null,
+};
+
+function render(){ document.getElementById("app").innerHTML = views[state.scr](); attachEvents(); }
+
+/* ─── LOAD MAP ─── */
+fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
+  .then(r=>r.json())
+  .then(topo=>{
+    const geojson = topojson.feature(topo, topo.objects.states);
+    mapFeatures = geojson.features
+      .filter(f=> FIPS[String(f.id).padStart(2,"0")])
+      .map(f=>({...f, name: FIPS[String(f.id).padStart(2,"0")]}));
+    render();
+  })
+  .catch(()=>{ document.getElementById("app").innerHTML='<div class="loading" style="color:#ef4444">Could not load map data.<br>Please check your internet connection and refresh.</div>'; });
+
+/* Initial loading screen */
+document.getElementById("app").innerHTML='<div class="loading"><div class="spinner"></div>Loading map data...</div>';
+
+/* ─── VIEWS ─── */
+const views = {
+  menu(){
+    const isAll = state.selW.size===WEEKS.length;
+    const pool = WEEKS.flatMap(w=>state.selW.has(w.week)?w.states:[]);
+    return `
+    <div class="card menu-card fade-in">
+      <div class="flag-stripe"><div></div><div></div><div></div><div></div><div></div></div>
+      <div class="menu-body">
+        <div class="stars">★ ★ ★</div>
+        <h1 class="title">U.S. Capitals Quiz</h1>
+        <p class="subtitle">States, Locations & Capitals</p>
+        <div class="opt-row">
+          <span class="opt-label">Map Location Quiz</span>
+          <button class="toggle ${state.mapOn?'on':'off'}" data-act="toggleMap"><div class="toggle-knob"></div></button>
+        </div>
+        <div class="opt-row">
+          <span class="opt-label">Capital Answer Mode</span>
+          <div class="mode-toggle">
+            <button class="mode-btn ${state.capMode==='choice'?'active':'inactive'}" data-act="setMode" data-val="choice">4-Choice</button>
+            <button class="mode-btn ${state.capMode==='spell'?'active':'inactive'}" data-act="setMode" data-val="spell">Spell Out</button>
+          </div>
+        </div>
+        <div class="range-row">
+          <button class="range-btn" data-act="${isAll?'clrAll':'selAll'}">${isAll?'Deselect All':'Select All'}</button>
+          ${[5,10,15].map(n=>`<button class="range-btn" data-act="selRange" data-val="${n}">W1–${n}</button>`).join('')}
+        </div>
+        <div class="week-grid">
+          ${WEEKS.map(w=>`<button class="week-btn ${state.selW.has(w.week)?'on':'off'}" data-act="togWeek" data-val="${w.week}">
+            <span class="wn">W${w.week}</span><span class="wc">${w.states.length}</span>
+          </button>`).join('')}
+        </div>
+        <div class="sel-info">${state.selW.size>0?`${pool.length} states from ${state.selW.size} week${state.selW.size>1?'s':''}${state.mapOn?' • Map + Capital':' • Capital only'}`:'Select weeks to start'}</div>
+        <button class="start-btn ${state.selW.size>0?'active':'disabled'}" data-act="start" ${state.selW.size===0?'disabled':''}>Start Quiz</button>
+        <p class="hint">${state.mapOn?'Step 1: Find on map → Step 2: Name capital':state.capMode==='choice'?'Keys: 1-4, Enter':'Type & Enter'}</p>
+      </div>
+    </div>`;
+  },
+
+  quiz(){
+    const cur=state.qs[state.ci]; if(!cur) return '';
+    const tot=state.mapOn?state.qs.length*2:state.qs.length;
+    const dp=state.mapOn?state.ci*2+(state.phase==="capital"?1:0)+(state.phase==="capital"&&state.done?1:(state.phase==="map"&&state.mapDn?1:0)):state.ci+(state.done?1:0);
+    const pct=tot>0?(dp/tot)*100:0;
+    const capOk=state.capMode==="choice"?state.sel===cur.capital:state.spOk;
+
+    let mapHTML='';
+    if(state.phase==="map" && mapFeatures){
+      const paths=mapFeatures.map(f=>{
+        let fill='var(--map-fill)',stroke='#94a3b8',sw=0.6,cursor='pointer';
+        if(state.mapDn){
+          if(f.name===cur.state){fill='#22c55e';stroke='#15803d';sw=2.5;}
+          else if(f.name===state.mapSel){fill='#ef4444';stroke='#991b1b';sw=2.5;}
+          else{fill='#dce4ef';}
+          cursor='default';
+        } else if(f.name===state.hov){fill='var(--map-hover)';stroke='#2563eb';sw=1.8;}
+        return `<path d="${pathGen(f)}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round" style="cursor:${cursor}" data-state="${f.name}"/>`;
+      }).join('');
+      let hereMark='';
+      if(state.mapDn && state.mapSel && state.mapSel!==cur.state){
+        const tf=mapFeatures.find(f=>f.name===cur.state);
+        if(tf){const c=pathGen.centroid(tf);if(c&&!isNaN(c[0])) hereMark=`<circle cx="${c[0]}" cy="${c[1]}" r="18" fill="rgba(22,163,74,.15)" stroke="#16a34a" stroke-width="2"/><line x1="${c[0]}" y1="${c[1]-18}" x2="${c[0]}" y2="${c[1]-30}" stroke="#16a34a" stroke-width="2"/><text x="${c[0]}" y="${c[1]-34}" text-anchor="middle" font-size="14" fill="#15803d" font-weight="800" font-family="var(--sans)">HERE</text>`;}
+      }
+      mapHTML=`<div class="map-wrap"><svg viewBox="0 0 960 600">${paths}${hereMark}</svg></div>`;
+      if(state.mapDn) mapHTML+=`<div class="feedback-row"><div class="feedback-msg" style="color:${state.mapSel===cur.state?'var(--green)':'var(--red-err)'}">${state.mapSel===cur.state?'✓ Correct!':'✗ Wrong location'}</div><button class="next-btn" data-act="toCap">Capital →</button></div>`;
+    }
+
+    let capHTML='';
+    if(state.phase==="capital"){
+      if(state.capMode==="choice"){
+        capHTML=`<div class="choices-grid">${cur.choices.map((ch,i)=>{
+          let cls='choice-btn';
+          if(state.done){if(ch===cur.capital)cls+=' correct';else if(ch===state.sel)cls+=' wrong';else cls+=' dim';}
+          return `<button class="${cls}" data-act="selChoice" data-val="${ch}"><span class="choice-key">${i+1}</span><span class="choice-text">${ch}</span></button>`;
+        }).join('')}</div>`;
+      } else {
+        const ic=state.done?(capOk?'ok':'err'):'';
+        capHTML=`<div class="spell-area"><div class="input-row"><input type="text" class="spell-input ${ic}" id="spellInput" value="${esc(state.typed)}" placeholder="Type the capital city..." ${state.done?'disabled':''} autocomplete="off" spellcheck="false"/>${state.done?'':`<button class="check-btn" data-act="checkSpell">Check</button>`}</div>${state.done&&!capOk?`<div class="correct-answer">Correct: <strong>${cur.capital}</strong></div>`:''}</div>`;
+      }
+      if(state.done) capHTML+=`<div class="feedback-row"><div class="feedback-msg" style="color:${capOk?'var(--green)':'var(--red-err)'}">${capOk?(state.streak>=3?'🔥 On fire!':'✓ Correct!'):(state.capMode==='choice'?'✗ '+cur.capital:'✗ Incorrect')}</div><button class="next-btn" data-act="next">${state.ci+1>=state.qs.length?'Results':'Next →'}</button></div>`;
+    }
+
+    return `
+    <div class="card quiz-card fade-in">
+      <div class="quiz-header">
+        <button class="back-btn" data-act="backMenu">✕</button>
+        <div class="header-center"><span class="q-num">${state.ci+1}/${state.qs.length}</span>${state.streak>=3?`<span class="streak-badge">🔥${state.streak}</span>`:''}</div>
+        <div class="score-pill">${state.score}pts</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      ${state.mapOn?`<div class="phase-row"><div class="phase-tag ${state.phase==='capital'?'done':'active'}">${state.phase==='capital'?'✓ ':''}Map</div><div class="phase-div">→</div><div class="phase-tag ${state.phase==='capital'?'active':'next'}">Capital</div></div>`:''}
+      <div class="q-area">
+        <p class="q-label">${state.phase==='map'?'Find this state on the map':'What is the capital of'}</p>
+        <h2 class="state-name">${cur.state}${state.phase==='capital'?'?':''}</h2>
+      </div>
+      ${mapHTML}${capHTML}
+    </div>`;
+  },
+
+  done(){
+    const tot=state.mapOn?state.qs.length*2:state.qs.length;
+    const p=tot>0?Math.round((state.score/tot)*100):0;
+    const g=p===100?'🌟 Perfect!':p>=90?'🎉 Excellent!':p>=70?'👍 Good job!':p>=50?'📖 Keep studying!':'💪 Don\'t give up!';
+    const wrong=state.res.filter(r=>!r.correct);
+    const mW=wrong.filter(r=>r.type==='map'),cW=wrong.filter(r=>r.type==='capital');
+    return `
+    <div class="card result-card fade-in">
+      <h1 class="result-grade">${g}</h1>
+      <div class="result-score"><span class="result-big">${state.score}</span><span class="result-of">/${tot}</span></div>
+      <div class="result-pct">${p}%</div>
+      <div class="stat-row">
+        ${state.mapOn?`<div class="stat-item"><div class="stat-val">${state.mSc}/${state.qs.length}</div><div class="stat-label">Map</div></div>`:''}
+        <div class="stat-item"><div class="stat-val">${state.cSc}/${state.qs.length}</div><div class="stat-label">Capital</div></div>
+        <div class="stat-item"><div class="stat-val">${state.best}</div><div class="stat-label">Streak</div></div>
+      </div>
+      ${mW.length>0?`<div class="review-section"><h3 class="review-title">Map Mistakes</h3><div class="review-list">${mW.map(r=>`<div class="review-item"><span class="review-state">${r.state}</span><span class="review-wrong">chose: ${r.answer}</span></div>`).join('')}</div></div>`:''}
+      ${cW.length>0?`<div class="review-section"><h3 class="review-title">Capital Mistakes</h3><div class="review-list">${cW.map(r=>`<div class="review-item"><span class="review-state">${r.state}</span><span class="review-wrong">${r.answer}</span><span class="review-arrow">→</span><span class="review-correct">${r.capital}</span></div>`).join('')}</div></div>`:''}
+      <div class="result-actions"><button class="retry-btn" data-act="start">Try Again</button><button class="menu-btn2" data-act="backMenu">Menu</button></div>
+    </div>`;
+  },
+};
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+/* ─── EVENT HANDLING ─── */
+function attachEvents(){
+  document.querySelectorAll('[data-act]').forEach(el=>{
+    el.addEventListener('click',()=> actions[el.dataset.act]?.(el.dataset.val));
+  });
+  // Map state hover/click
+  document.querySelectorAll('[data-state]').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{ if(!state.mapDn){state.hov=el.dataset.state;render();} });
+    el.addEventListener('mouseleave',()=>{ if(!state.mapDn){state.hov=null;render();} });
+    el.addEventListener('click',()=>{ if(!state.mapDn) actions.mapClick(el.dataset.state); });
+  });
+  // Spell input
+  const inp=document.getElementById('spellInput');
+  if(inp){
+    inp.addEventListener('input',e=>{state.typed=e.target.value;});
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!state.done) actions.checkSpell();});
+    if(state.phase==='capital'&&state.capMode==='spell'&&!state.done) setTimeout(()=>inp.focus(),50);
+  }
+  // Keyboard
+  document.onkeydown=e=>{
+    if(state.scr!=='quiz') return;
+    if(state.phase==='map'){if(state.mapDn&&e.key==='Enter'){e.preventDefault();actions.toCap();}}
+    else{
+      if(state.capMode==='choice'){
+        if(state.done&&(e.key==='Enter'||e.key===' ')){e.preventDefault();actions.next();}
+        if(!state.done&&'1234'.includes(e.key)){const i=+e.key-1;if(state.qs[state.ci]?.choices[i])actions.selChoice(state.qs[state.ci].choices[i]);}
+      } else {if(state.done&&e.key==='Enter'){e.preventDefault();actions.next();}}
+    }
+  };
+}
+
+function addStreak(ok){
+  if(ok){state.streak++;state.best=Math.max(state.best,state.streak);}
+  else state.streak=0;
+}
+
+const actions = {
+  toggleMap(){ state.mapOn=!state.mapOn; render(); },
+  setMode(v){ state.capMode=v; render(); },
+  selAll(){ const s=new Set();WEEKS.forEach(w=>s.add(w.week));state.selW=s;render(); },
+  clrAll(){ state.selW=new Set();render(); },
+  selRange(v){ const s=new Set();for(let i=1;i<=+v;i++)s.add(i);state.selW=s;render(); },
+  togWeek(v){ const w=+v;state.selW.has(w)?state.selW.delete(w):state.selW.add(w);render(); },
+  start(){
+    if(state.selW.size===0) return;
+    const pool=WEEKS.flatMap(w=>state.selW.has(w.week)?w.states:[]);
+    const all=WEEKS.flatMap(w=>w.states);
+    state.qs=shuffle(pool).map(([s,c])=>({state:s,capital:c,choices:state.capMode==='choice'?genCh(c,all):[]}));
+    state.ci=0;state.score=0;state.mSc=0;state.cSc=0;state.res=[];state.streak=0;state.best=0;
+    state.sel=null;state.done=false;state.typed='';state.spOk=null;state.mapSel=null;state.mapDn=false;state.hov=null;
+    state.phase=state.mapOn?'map':'capital';state.scr='quiz';render();
+  },
+  backMenu(){ state.scr='menu';render(); },
+  mapClick(name){
+    if(state.mapDn) return;
+    state.mapSel=name;state.mapDn=true;state.hov=null;
+    const ok=name===state.qs[state.ci].state;
+    if(ok){state.score++;state.mSc++;}
+    addStreak(ok);
+    state.res.push({state:state.qs[state.ci].state,type:'map',answer:name,correct:ok});
+    render();
+  },
+  toCap(){ state.phase='capital';state.mapSel=null;state.mapDn=false;state.hov=null;render(); },
+  selChoice(ch){
+    if(state.done) return;
+    const ok=state.qs[state.ci].capital===ch;
+    state.sel=ch;state.done=true;
+    if(ok){state.score++;state.cSc++;}
+    addStreak(ok);
+    state.res.push({state:state.qs[state.ci].state,capital:state.qs[state.ci].capital,type:'capital',answer:ch,correct:ok});
+    render();
+  },
+  checkSpell(){
+    if(state.done||!state.typed.trim()) return;
+    const cap=state.qs[state.ci].capital;
+    const ok=norm(state.typed)===norm(cap);
+    state.spOk=ok;state.done=true;
+    if(ok){state.score++;state.cSc++;}
+    addStreak(ok);
+    state.res.push({state:state.qs[state.ci].state,capital:cap,type:'capital',answer:state.typed.trim(),correct:ok});
+    render();
+  },
+  next(){
+    if(state.ci+1>=state.qs.length){state.scr='done';render();return;}
+    state.ci++;state.sel=null;state.done=false;state.typed='';state.spOk=null;
+    state.mapSel=null;state.mapDn=false;state.hov=null;
+    state.phase=state.mapOn?'map':'capital';render();
+  },
+};
+</script>
+
+</body>
+</html>
